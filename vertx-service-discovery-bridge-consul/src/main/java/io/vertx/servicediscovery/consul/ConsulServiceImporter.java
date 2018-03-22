@@ -38,6 +38,7 @@ import io.vertx.servicediscovery.types.HttpLocation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -227,6 +228,7 @@ public class ConsulServiceImporter implements ServiceImporter {
   }
 
   private Record createRecord(Service service) {
+
     String address = service.getNodeAddress();
     String path = service.getAddress();
     int port = service.getPort();
@@ -267,6 +269,17 @@ public class ConsulServiceImporter implements ServiceImporter {
     }
 
     record.setLocation(location);
+
+    if (service.getTags() != null) {
+      service.getTags().stream()
+        .filter(t -> t.startsWith("location:"))
+        .map(t -> t.substring("location:".length()))
+        .map(JsonObject::new)
+        .map(HttpLocation::new)
+        .findFirst()
+        .ifPresent(loc -> record.setLocation(loc.toJson()));
+    }
+
     return record;
   }
 
